@@ -1,0 +1,12 @@
+Dernière mise à jour: 2025-07-04 11:29:38.193474
+Taille du dataset: 7840 entrées
+Nouveaux feedbacks intégrés: 18
+
+              precision    recall  f1-score   support
+
+           0       0.92      0.94      0.93       716
+           1       0.95      0.93      0.94       852
+
+    accuracy                           0.93      1568
+   macro avg       0.93      0.93      0.93      1568
+weighted avg       0.93      0.93      0.93      1568

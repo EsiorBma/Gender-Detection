@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord Admin - Détection de Genre</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <header class="bg-dark text-white p-3">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Tableau de bord Administrateur</h1>
+                <div>
+                    <span class="me-3">Connecté en tant qu'administrateur</span>
+                    <a href="/logout" class="btn btn-outline-light">
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Tableau de bord Administrateur</h1>
+            <a href="/" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Retour à l'application
+            </a>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card bg-light">
+                    <div class="stat-value">{{ model_data.data_size }}</div>
+                    <div class="stat-label">Entrées d'entraînement</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-light">
+                    <div class="stat-value">{{ feedback_stats.total }}</div>
+                    <div class="stat-label">Prédictions totales</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-light">
+                    <div class="stat-value">{{ feedback_stats.with_feedback }}</div>
+                    <div class="stat-label">Feedbacks reçus</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-light">
+                    <div class="stat-value">{{ feedback_stats.accuracy }}%</div>
+                    <div class="stat-label">Précision</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Informations du modèle</h2>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Dernière mise à jour:</strong> 
+                            {{ model_data.training_date|datetimeformat }}</p>
+                        <p><strong>Algorithme:</strong> VotingClassifier (XGBoost + Random Forest)</p>
+                        <p><strong>Fonction d'extraction:</strong> extract_features</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Prochain entraînement automatique:</strong> {{ next_training|datetimeformat }}</p>
+                        <p><strong>Dernier feedback reçu:</strong> {{ feedback_stats.last_feedback|datetimeformat }}</p>
+                        <button class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Entraîner maintenant
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h2 class="mb-0">Rapport de performance</h2>
+            </div>
+            <div class="card-body">
+                <div class="report">{{ performance_report }}</div>
+            </div>
+        </div>
+
+        
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h2 class="mb-0">Importance des features</h2>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Importance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feature in model_data.feature_importance %}
+                    <tr>
+                        <td>{{ feature.feature }}</td>
+                        <td>{{ feature.importance | round(4) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white">
+                <h2 class="mb-0">Feedbacks récents</h2>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Prédiction</th>
+                            <th>Feedback</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feedback in feedbacks %}
+                        <tr>
+                            <td>{{ feedback.id }}</td>
+                            <td>{{ feedback.prediction }}</td>
+                            <td>{{ feedback.feedback }}</td>
+                            <td datetimeformat>{{ feedback.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fonction pour formater les dates
+        function formatDateTime(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR');
+        }
+
+        // Appliquer le formatage à tous les éléments avec datetimeformat
+        document.querySelectorAll('[datetimeformat]').forEach(el => {
+            el.textContent = formatDateTime(el.textContent);
+        });
+    </script>
+</body>
+</html>
