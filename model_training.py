@@ -293,6 +293,6 @@ if __name__ == "__main__":
     train_and_update_model()
     
     # Boucle principale pour exécuter les tâches planifiées
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # Vérifier toutes les minutes
+   # while True:
+        #schedule.run_pending()
+     #   time.sleep(60)  # Vérifier toutes les minutes
