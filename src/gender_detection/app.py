@@ -37,6 +37,33 @@ app.secret_key = SECRET_KEY
 # Initialize model
 classifier = GenderClassifier()
 
+# Initialize on module import (for Gunicorn)
+def _initialize_app():
+    """Initialize app components on module import."""
+    # Create default admin user
+    user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
+    
+    # Train model if it doesn't exist (first deployment)
+    if classifier.model_data is None:
+        logger.info("🚀 Model not found - training model on first deployment...")
+        try:
+            classifier.train()
+            logger.info("✅ Initial model training completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to train model on startup: {e}", exc_info=True)
+            # Don't fail completely, app can still serve but predictions will fail
+    
+    # Start automatic training scheduler in background
+    scheduler_thread = threading.Thread(
+        target=automatic_training_scheduler,
+        daemon=True  # Thread will stop when main program stops
+    )
+    scheduler_thread.start()
+    logger.info("⏰ Automatic training scheduler started (runs daily at 2 AM)")
+
+# Call initialization
+_initialize_app()
+
 
 @app.template_filter('datetimeformat')
 def datetimeformat(value, fmt='%d/%m/%Y %H:%M'):
@@ -322,50 +349,10 @@ def automatic_training_scheduler():
 
 
 def create_app():
-    """Application factory."""
-    # Create default admin user
-    user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
-    
-    # Train model if it doesn't exist (first deployment)
-    if classifier.model_data is None:
-        logger.info("Model not found - training model on first deployment...")
-        try:
-            classifier.train()
-            logger.info("✅ Initial model training completed successfully")
-        except Exception as e:
-            logger.error(f"❌ Failed to train model on startup: {e}", exc_info=True)
-    
-    # Start automatic training scheduler in background
-    scheduler_thread = threading.Thread(
-        target=automatic_training_scheduler,
-        daemon=True  # Thread will stop when main program stops
-    )
-    scheduler_thread.start()
-    logger.info("Automatic training scheduler started (runs daily at 2 AM)")
-    
+    """Application factory (initialization already done on module import)."""
     return app
 
 
 if __name__ == '__main__':
-    # Create default admin user
-    user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
-    
-    # Train model if it doesn't exist (first deployment)
-    if classifier.model_data is None:
-        logger.info("Model not found - training model on first startup...")
-        try:
-            classifier.train()
-            logger.info("✅ Initial model training completed successfully")
-        except Exception as e:
-            logger.error(f"❌ Failed to train model on startup: {e}", exc_info=True)
-    
-    # Start automatic training scheduler in background
-    scheduler_thread = threading.Thread(
-        target=automatic_training_scheduler,
-        daemon=True
-    )
-    scheduler_thread.start()
-    logger.info("Automatic training scheduler started (runs daily at 2 AM)")
-
-    # Run development server
+    # Run development server (initialization already done on module import)
     app.run(debug=DEBUG, host='0.0.0.0', port=5000)

@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Databases (generated at runtime)
+*.db
+*.sqlite
+*.sqlite3
+feedback.db.sqlite3
+users.db.sqlite3
+
+# Models (trained at runtime)
+models/
+*.joblib
+*.pkl
+*.pickle
+
+# Logs (generated at runtime)
+logs/
+*.log
+
+# Reports (generated at runtime)
+training_report.txt
+feature_importance.csv
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development scripts
+scripts/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Docker
+docker-compose.yml
+Dockerfile.dev
+
+# Environment files
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+tests/
+test_*.py

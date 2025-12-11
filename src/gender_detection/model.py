@@ -108,6 +108,13 @@ class GenderClassifier:
         """
         dataset_path = dataset_path or str(DATASET_PATH)
 
+        # Verify dataset exists
+        if not Path(dataset_path).exists():
+            raise FileNotFoundError(
+                f"Dataset not found at {dataset_path}. "
+                f"Make sure 'data/noms_prenoms_togo.csv' exists."
+            )
+
         # Load data
         data = pd.read_csv(dataset_path)
         print(f"Loaded {len(data)} samples from {dataset_path}")

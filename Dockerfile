@@ -23,14 +23,18 @@ COPY pyproject.toml .
 # Install the package
 RUN pip install -e .
 
-# Create necessary directories
+# Create necessary directories for runtime-generated content
 RUN mkdir -p data models logs
 
-# Copy data files
-COPY data/ ./data/
+# Copy only the dataset (CSV file)
+COPY data/noms_prenoms_togo.csv ./data/
 
-# Note: models/ is generated at runtime during first training
-# Don't copy it as it doesn't exist in the repository
+# Note: The following are generated at runtime and should NOT be copied:
+# - models/ directory (trained model)
+# - *.db.sqlite3 files (databases)
+# - training_report.txt (generated report)
+# - feature_importance.csv (generated metrics)
+# - logs/ directory (application logs)
 
 # Expose port
 EXPOSE 8000
@@ -40,4 +44,5 @@ ENV PYTHONPATH=/app/src
 ENV FLASK_APP=gender_detection.app
 
 # Run with gunicorn
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:8000", "--timeout", "120", "--chdir", "src", "gender_detection.app:app"]
+# Note: Extended timeout (300s) to allow model training on first deployment
+CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "--timeout", "300", "--chdir", "src", "gender_detection.app:app"]
