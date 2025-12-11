@@ -326,6 +326,15 @@ def create_app():
     # Create default admin user
     user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
     
+    # Train model if it doesn't exist (first deployment)
+    if classifier.model_data is None:
+        logger.info("Model not found - training model on first deployment...")
+        try:
+            classifier.train()
+            logger.info("✅ Initial model training completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to train model on startup: {e}", exc_info=True)
+    
     # Start automatic training scheduler in background
     scheduler_thread = threading.Thread(
         target=automatic_training_scheduler,
@@ -340,6 +349,15 @@ def create_app():
 if __name__ == '__main__':
     # Create default admin user
     user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
+    
+    # Train model if it doesn't exist (first deployment)
+    if classifier.model_data is None:
+        logger.info("Model not found - training model on first startup...")
+        try:
+            classifier.train()
+            logger.info("✅ Initial model training completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to train model on startup: {e}", exc_info=True)
     
     # Start automatic training scheduler in background
     scheduler_thread = threading.Thread(

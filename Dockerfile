@@ -28,7 +28,9 @@ RUN mkdir -p data models logs
 
 # Copy data files
 COPY data/ ./data/
-COPY models/ ./models/
+
+# Note: models/ is generated at runtime during first training
+# Don't copy it as it doesn't exist in the repository
 
 # Expose port
 EXPOSE 8000
