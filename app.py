@@ -197,5 +197,5 @@ def preprocess_name(full_name):
 
 if __name__ == '__main__':
     # Créer un compte admin par défaut
-    user_db.create_user('ericjohny87@gmail.com', 'admin123')
+    user_db.create_user('ericjohny8@gmail.com', 'admin123')
     app.run(host='0.0.0.0', port=5000, debug=False)
