@@ -64,7 +64,8 @@ class FeatureExtractor:
         df = df.copy()
         split_names = df['full_name'].str.split(n=1, expand=True)
         df['surname'] = split_names[0]
-        df['first_names'] = split_names[1].fillna('')
+        df['first_names'] = split_names[1] if 1 in split_names.columns else ''
+        df['first_names'] = df['first_names'].fillna('')
 
         # Handle compound first names
         df['first_names'] = (

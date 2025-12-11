@@ -21,7 +21,7 @@ from .config import (
     TRAINING_REPORT_PATH,
     MODEL_CONFIG
 )
-from .features import extract_features
+from .features import FeatureExtractor
 from .database import db
 
 
@@ -37,6 +37,7 @@ class GenderClassifier:
         """
         self.model_path = model_path or str(MODEL_PATH)
         self.model_data = None
+        self.feature_extractor = FeatureExtractor()
         self.load_model()
 
     def load_model(self) -> bool:
@@ -68,7 +69,7 @@ class GenderClassifier:
 
         # Create DataFrame and extract features
         temp_df = pd.DataFrame([{'full_name': full_name}])
-        temp_df = self.model_data['extract_fn'](temp_df)
+        temp_df = self.feature_extractor.extract_features(temp_df)
 
         # Ensure all features are present
         for feature in self.model_data['features']:
@@ -112,7 +113,7 @@ class GenderClassifier:
         print(f"Loaded {len(data)} samples from {dataset_path}")
 
         # Extract features
-        data = extract_features(data)
+        data = self.feature_extractor.extract_features(data)
 
         # Prepare features and target
         X = data[FEATURE_NAMES]
@@ -152,7 +153,6 @@ class GenderClassifier:
         self.model_data = {
             'model': model,
             'features': FEATURE_NAMES,
-            'extract_fn': extract_features,
             'training_date': datetime.now().isoformat(),
             'data_size': len(data),
             'performance_report': report,

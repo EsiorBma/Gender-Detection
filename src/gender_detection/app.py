@@ -26,7 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Initialize Flask app
-app = Flask(__name__, template_folder='../templates', static_folder='../static')
+app = Flask(__name__, 
+            template_folder='../../templates',  # Adjusted path to root/templates
+            static_folder='../../static')        # Adjusted path to root/static
 app.secret_key = SECRET_KEY
 
 # Initialize model
