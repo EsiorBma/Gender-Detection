@@ -1,11 +1,11 @@
-Last update: 2025-12-11 15:05:15.142605
-Dataset size: 7859 entries
+Last update: 2025-12-11 15:28:33.590836
+Dataset size: 7857 entries
 New feedback integrated: 0
 
               precision    recall  f1-score   support
 
-           0       0.90      0.95      0.92       717
-           1       0.96      0.91      0.93       855
+           0       0.91      0.94      0.92       717
+           1       0.95      0.92      0.93       855
 
     accuracy                           0.93      1572
    macro avg       0.93      0.93      0.93      1572

@@ -227,6 +227,46 @@ class FeedbackDatabase:
                 'last_feedback': last_feedback
             }
 
+    def get_recent_feedbacks(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get recent feedbacks for display.
+
+        Args:
+            limit: Maximum number of feedbacks to return
+
+        Returns:
+            List of feedback dictionaries
+        """
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT 
+                    id,
+                    full_name,
+                    predicted_gender,
+                    actual_gender,
+                    is_correct,
+                    timestamp
+                FROM feedback
+                WHERE actual_gender IS NOT NULL
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ''', (limit,))
+            
+            rows = cursor.fetchall()
+            feedbacks = []
+            for row in rows:
+                feedbacks.append({
+                    'id': row[0],
+                    'full_name': row[1],
+                    'predicted_gender': 'Homme' if row[2] == 1 else 'Femme',
+                    'actual_gender': 'Homme' if row[3] == 1 else 'Femme',
+                    'is_correct': '✓' if row[4] else '✗',
+                    'timestamp': row[5]
+                })
+            
+            return feedbacks
+
 
 class UserDatabase:
     """Manage user authentication."""

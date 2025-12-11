@@ -1,6 +1,9 @@
 """Flask web application for gender detection."""
 
 import logging
+import threading
+import time
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -162,8 +165,23 @@ def admin_dashboard():
     except FileNotFoundError:
         performance_report = "No report available"
 
+    # Extract model accuracy from performance report
+    model_accuracy = 93  # Default from training
+    try:
+        # Extract accuracy from classification report
+        match = re.search(r'accuracy\s+([0-9.]+)', performance_report)
+        if match:
+            model_accuracy = round(float(match.group(1)) * 100, 2)
+    except Exception as e:
+        logger.warning(f"Could not parse accuracy: {e}")
+
     # Get feedback statistics
     feedback_stats = db.get_feedback_stats()
+    # Override with model accuracy instead of feedback accuracy
+    feedback_stats['model_accuracy'] = model_accuracy
+
+    # Get recent feedbacks for display
+    recent_feedbacks = db.get_recent_feedbacks(limit=20)
 
     # Calculate next training time (tomorrow at 2 AM)
     now = datetime.now()
@@ -187,8 +205,53 @@ def admin_dashboard():
         model_data=model_info,
         performance_report=performance_report,
         feedback_stats=feedback_stats,
+        feedbacks=recent_feedbacks,
         next_training=next_training
     )
+
+
+@app.route('/retrain', methods=['POST'])
+def retrain_model():
+    """Manually trigger model retraining."""
+    if not session.get('admin_logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        logger.info("Manual retraining started")
+        
+        # Check for new feedback
+        feedback_data = db.get_new_feedback()
+        
+        if feedback_data.empty:
+            return jsonify({
+                'success': True,
+                'message': 'Pas de nouveaux feedbacks. Modèle déjà à jour.',
+                'feedback_count': 0
+            })
+        
+        # Update model with feedback
+        success = classifier.update_with_feedback()
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Modèle réentraîné avec succès avec {len(feedback_data)} nouveaux exemples!',
+                'feedback_count': len(feedback_data)
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Échec du réentraînement',
+                'feedback_count': 0
+            })
+            
+    except Exception as e:
+        logger.error(f"Retraining error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Erreur: {str(e)}',
+            'feedback_count': 0
+        }), 500
 
 
 @app.route('/logout')
@@ -229,16 +292,62 @@ def _add_to_csv(full_name: str, gender: int) -> None:
         logger.error(f"Error adding to CSV: {str(e)}")
 
 
+def automatic_training_scheduler():
+    """Background thread for automatic training at 2 AM."""
+    while True:
+        now = datetime.now()
+        # Calculate seconds until next 2 AM
+        if now.hour < 2:
+            next_run = now.replace(hour=2, minute=0, second=0, microsecond=0)
+        else:
+            next_run = (now + timedelta(days=1)).replace(
+                hour=2, minute=0, second=0, microsecond=0
+            )
+        
+        sleep_seconds = (next_run - now).total_seconds()
+        logger.info(f"Next automatic training scheduled at {next_run} (in {sleep_seconds/3600:.1f} hours)")
+        
+        # Sleep until 2 AM
+        time.sleep(sleep_seconds)
+        
+        # Run automatic training
+        try:
+            logger.info("Starting automatic training at 2 AM")
+            classifier.update_with_feedback()
+        except Exception as e:
+            logger.error(f"Automatic training failed: {str(e)}")
+        
+        # Sleep 1 minute to avoid running twice
+        time.sleep(60)
+
+
 def create_app():
     """Application factory."""
     # Create default admin user
     user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
+    
+    # Start automatic training scheduler in background
+    scheduler_thread = threading.Thread(
+        target=automatic_training_scheduler,
+        daemon=True  # Thread will stop when main program stops
+    )
+    scheduler_thread.start()
+    logger.info("Automatic training scheduler started (runs daily at 2 AM)")
+    
     return app
 
 
 if __name__ == '__main__':
     # Create default admin user
     user_db.create_user(DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD)
+    
+    # Start automatic training scheduler in background
+    scheduler_thread = threading.Thread(
+        target=automatic_training_scheduler,
+        daemon=True
+    )
+    scheduler_thread.start()
+    logger.info("Automatic training scheduler started (runs daily at 2 AM)")
 
     # Run development server
     app.run(debug=DEBUG, host='0.0.0.0', port=5000)
