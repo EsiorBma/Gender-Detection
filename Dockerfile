@@ -20,6 +20,7 @@ COPY static/ ./static/
 COPY setup.py .
 COPY pyproject.toml .
 COPY README.md .
+COPY start.sh .
 
 # Install the package
 RUN pip install -e .
@@ -44,5 +45,5 @@ EXPOSE 8000
 ENV PYTHONPATH=/app/src
 ENV FLASK_APP=gender_detection.app
 
-# Note: CMD is omitted - Railway will use Procfile instead
-# This allows Railway to inject the correct $PORT environment variable
+# Use startup script to handle dynamic PORT from Railway
+CMD ["bash", "start.sh"]
