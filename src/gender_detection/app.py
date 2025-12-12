@@ -37,6 +37,37 @@ app.secret_key = SECRET_KEY
 # Initialize model
 classifier = GenderClassifier()
 
+
+# Define scheduler function BEFORE _initialize_app uses it
+def automatic_training_scheduler():
+    """Background thread for automatic training at 2 AM."""
+    while True:
+        now = datetime.now()
+        # Calculate seconds until next 2 AM
+        if now.hour < 2:
+            next_run = now.replace(hour=2, minute=0, second=0, microsecond=0)
+        else:
+            next_run = (now + timedelta(days=1)).replace(
+                hour=2, minute=0, second=0, microsecond=0
+            )
+        
+        sleep_seconds = (next_run - now).total_seconds()
+        logger.info(f"Next automatic training scheduled at {next_run} (in {sleep_seconds/3600:.1f} hours)")
+        
+        # Sleep until 2 AM
+        time.sleep(sleep_seconds)
+        
+        # Run automatic training
+        try:
+            logger.info("Starting automatic training at 2 AM")
+            classifier.update_with_feedback()
+        except Exception as e:
+            logger.error(f"Automatic training failed: {str(e)}")
+        
+        # Sleep 1 minute to avoid running twice
+        time.sleep(60)
+
+
 # Initialize on module import (for Gunicorn)
 def _initialize_app():
     """Initialize app components on module import."""
@@ -317,35 +348,6 @@ def _add_to_csv(full_name: str, gender: int) -> None:
         new_entry.to_csv(str(DATASET_PATH), mode='a', header=False, index=False)
     except Exception as e:
         logger.error(f"Error adding to CSV: {str(e)}")
-
-
-def automatic_training_scheduler():
-    """Background thread for automatic training at 2 AM."""
-    while True:
-        now = datetime.now()
-        # Calculate seconds until next 2 AM
-        if now.hour < 2:
-            next_run = now.replace(hour=2, minute=0, second=0, microsecond=0)
-        else:
-            next_run = (now + timedelta(days=1)).replace(
-                hour=2, minute=0, second=0, microsecond=0
-            )
-        
-        sleep_seconds = (next_run - now).total_seconds()
-        logger.info(f"Next automatic training scheduled at {next_run} (in {sleep_seconds/3600:.1f} hours)")
-        
-        # Sleep until 2 AM
-        time.sleep(sleep_seconds)
-        
-        # Run automatic training
-        try:
-            logger.info("Starting automatic training at 2 AM")
-            classifier.update_with_feedback()
-        except Exception as e:
-            logger.error(f"Automatic training failed: {str(e)}")
-        
-        # Sleep 1 minute to avoid running twice
-        time.sleep(60)
 
 
 def create_app():
