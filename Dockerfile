@@ -19,6 +19,7 @@ COPY templates/ ./templates/
 COPY static/ ./static/
 COPY setup.py .
 COPY pyproject.toml .
+COPY README.md .
 
 # Install the package
 RUN pip install -e .

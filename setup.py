@@ -5,10 +5,14 @@ from pathlib import Path
 
 # Read README
 this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text(encoding='utf-8')
+readme_file = this_directory / "README.md"
+long_description = readme_file.read_text(encoding='utf-8') if readme_file.exists() else "Gender Detection from Togolese Names"
 
-# Read requirements
-requirements = (this_directory / "requirements.txt").read_text().splitlines()
+# Read requirements (use production requirements if available, fallback to requirements.txt)
+requirements_file = this_directory / "requirements-prod.txt"
+if not requirements_file.exists():
+    requirements_file = this_directory / "requirements.txt"
+requirements = requirements_file.read_text().splitlines()
 requirements = [r.strip() for r in requirements if r.strip() and not r.startswith('#')]
 
 setup(
