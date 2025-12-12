@@ -44,6 +44,5 @@ EXPOSE 8000
 ENV PYTHONPATH=/app/src
 ENV FLASK_APP=gender_detection.app
 
-# Run with gunicorn
-# Note: Extended timeout (300s) to allow model training on first deployment
-CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "--timeout", "300", "--chdir", "src", "gender_detection.app:app"]
+# Note: CMD is omitted - Railway will use Procfile instead
+# This allows Railway to inject the correct $PORT environment variable
