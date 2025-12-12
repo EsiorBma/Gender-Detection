@@ -52,8 +52,14 @@
             </div>
             <div class="col-md-3">
                 <div class="card stat-card bg-light">
+                    <div class="stat-value">{{ feedback_stats.model_accuracy }}%</div>
+                    <div class="stat-label">Précision du Modèle</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-light">
                     <div class="stat-value">{{ feedback_stats.accuracy }}%</div>
-                    <div class="stat-label">Précision</div>
+                    <div class="stat-label">Précision Feedback</div>
                 </div>
             </div>
         </div>
@@ -73,9 +79,10 @@
                     <div class="col-md-6">
                         <p><strong>Prochain entraînement automatique:</strong> {{ next_training|datetimeformat }}</p>
                         <p><strong>Dernier feedback reçu:</strong> {{ feedback_stats.last_feedback|datetimeformat }}</p>
-                        <button class="btn btn-warning">
-                            <i class="bi bi-arrow-repeat"></i> Entraîner maintenant
+                        <button id="retrainBtn" class="btn btn-warning" onclick="retrainModel()">
+                            <i class="bi bi-arrow-repeat"></i> <span id="retrainText">Entraîner maintenant</span>
                         </button>
+                        <div id="retrainMessage" class="mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -117,15 +124,18 @@
 
         <div class="card mt-4">
             <div class="card-header bg-secondary text-white">
-                <h2 class="mb-0">Feedbacks récents</h2>
+                <h2 class="mb-0">Feedbacks récents ({{ feedbacks|length }})</h2>
             </div>
             <div class="card-body">
+                {% if feedbacks %}
                 <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Prédiction</th>
-                            <th>Feedback</th>
+                            <th>Nom</th>
+                            <th>Prédit</th>
+                            <th>Réel</th>
+                            <th>Correct</th>
                             <th>Date</th>
                         </tr>
                     </thead>
@@ -133,18 +143,64 @@
                         {% for feedback in feedbacks %}
                         <tr>
                             <td>{{ feedback.id }}</td>
-                            <td>{{ feedback.prediction }}</td>
-                            <td>{{ feedback.feedback }}</td>
-                            <td datetimeformat>{{ feedback.date }}</td>
+                            <td>{{ feedback.full_name }}</td>
+                            <td>{{ feedback.predicted_gender }}</td>
+                            <td>{{ feedback.actual_gender }}</td>
+                            <td>
+                                <span class="badge {% if feedback.is_correct == '✓' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ feedback.is_correct }}
+                                </span>
+                            </td>
+                            <td>{{ feedback.timestamp|datetimeformat }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                {% else %}
+                <p class="text-muted">Aucun feedback reçu pour le moment. Les utilisateurs peuvent donner des feedbacks après chaque prédiction.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <script>
+        // Fonction pour réentraîner le modèle
+        function retrainModel() {
+            const btn = document.getElementById('retrainBtn');
+            const text = document.getElementById('retrainText');
+            const message = document.getElementById('retrainMessage');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            text.textContent = 'Entraînement en cours...';
+            message.innerHTML = '<div class="alert alert-info">Veuillez patienter...</div>';
+            
+            // Send POST request
+            fetch('/retrain', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    message.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    // Reload page after 2 seconds to show updated stats
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    message.innerHTML = `<div class="alert alert-warning">${data.message}</div>`;
+                    btn.disabled = false;
+                    text.textContent = 'Entraîner maintenant';
+                }
+            })
+            .catch(error => {
+                message.innerHTML = `<div class="alert alert-danger">Erreur: ${error.message}</div>`;
+                btn.disabled = false;
+                text.textContent = 'Entraîner maintenant';
+            });
+        }
+        
         // Fonction pour formater les dates
         function formatDateTime(dateString) {
             if (!dateString) return 'N/A';
